@@ -1,2 +1,13 @@
-# bohr-intro-writer-skill
-Source-grounded introduction and related work writing with citation mapping
+# 引言与相关工作写作：基于来源约束生成论述，保留引用映射与论断来源。
+
+玻尔科学空间高校挑战赛 · 北京化工大学分站赛 作品。
+
+核心：读取真实输入 → 遵循明确规则 → 保留来源与证据 → 诚实标注不确定性。含 6 步工作流、自检清单、字段约定、输出示例，以及基于真实论文 arXiv:2011.03269v1 的试跑产物（run/）。
+
+## 目录
+- SKILL.md：工作流与输入输出约定
+- resources/：自检清单、字段字典、输出示例
+- examples/：最小调用示例
+- run/：真实试跑输入与结果
+
+试跑仅演示工作流，非正式评测案例或答案。仅供赛事评审与学习交流。

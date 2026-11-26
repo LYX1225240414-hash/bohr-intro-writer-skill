@@ -1,0 +1,52 @@
+{
+  "case_id": "arXiv:2011.03269v1-intro-trial",
+  "status": "partial",
+  "result": {
+    "intro_paragraph": "氧空位related缺陷态对 TiO₂ 的光催化性能具有重要影响，但其在可见光吸收中的作用机制尚存争议。已有研究多聚焦单一孤立空位，而对相邻空位位俘获电子形成的单重态关注不足。本文报告了一种氧缺陷 TiO₂ 中的色心，结合 EPR、光谱学与 DFT 计算，阐明其单重态起源及其与氧空位的关联。",
+    "moves": [
+      {
+        "move": "context",
+        "claim": "氧空位缺陷态影响 TiO₂ 光催化",
+        "source": "p2:3",
+        "anchor": "p2:3"
+      },
+      {
+        "move": "gap",
+        "claim": "单重态起源机制尚存争议",
+        "source": "p2:2 (rather than single isolated vacancy)",
+        "anchor": "p2:2"
+      },
+      {
+        "move": "contribution",
+        "claim": "报告色心并阐明单重态起源",
+        "source": "p1:2, p1:3",
+        "anchor": "p1:2"
+      }
+    ]
+  },
+  "evidence_map": [
+    {
+      "claim": "研究背景：氧空位可形成带隙缺陷态",
+      "evidence": "oxygen vacancies can create defect states inside the band gap",
+      "anchor": "p2:3"
+    },
+    {
+      "claim": "研究空白：单重态源自相邻双空位而非孤立空位",
+      "evidence": "rather than from a single isolated vacancy",
+      "anchor": "p2:2"
+    }
+  ],
+  "verification": {
+    "fact_preservation": "通过：事实/数字/限定词/否定原样保留",
+    "anchor_validity": "通过：所有锚点指向输入中真实存在的段落",
+    "no_new_facts": "通过：未新增材料外信息"
+  },
+  "uncertainties": [
+    {
+      "item": "引言为基于摘要的改写示范",
+      "reason": "输入为摘要片段，无完整引言/相关工作原文，gap 陈述为依据 p2:2 的合理转述，正式使用需核对全文",
+      "location": "intro_paragraph"
+    }
+  ],
+  "change_log": []
+}

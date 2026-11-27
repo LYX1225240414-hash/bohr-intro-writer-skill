@@ -1,18 +1,70 @@
 {
   "case_id": "示例，非真实案例",
-  "status": "success",
-  "result": "[示例主结果，仅展示结构]",
-  "evidence_map": [
+  "status": "partial",
+  "introduction_draft": {
+    "background": "[示例：完整可编辑背景段落，非正式案例答案]",
+    "related_work": "[示例：完整可编辑相关工作段落，按维度分组比较]",
+    "gap": "[示例：由已引文献缺口推出的研究空白]",
+    "contributions": "[示例：与正文方法图表结果一一对应的贡献条目]"
+  },
+  "related_work_groups": [
     {
+      "group_id": "G1",
+      "dimension": "方法路线",
+      "works": ["[示例 ref_id]"],
+      "comparison": "[示例：共同点、差异与取舍]",
+      "anchor": "p2:1"
+    }
+  ],
+  "claim_citations": [
+    {
+      "claim_id": "C1",
       "claim": "[示例论断]",
+      "ref_id": "[示例 ref_id]",
       "evidence": "[示例原文短引]",
-      "anchor": "p1:1"
+      "anchor": "p1:2",
+      "match_basis": "[示例：文献结论直接支撑该论断]",
+      "confidence": "medium"
+    }
+  ],
+  "gap_derivation": [
+    {
+      "gap_id": "GAP1",
+      "premise_refs": ["[示例 ref_id]"],
+      "reasoning": "[示例：从已知限制推出空白的推理链]",
+      "anchor": "p2:3"
+    }
+  ],
+  "contribution_map": [
+    {
+      "contribution_id": "CT1",
+      "statement": "[示例贡献]",
+      "evidence_in_paper": "[示例：图3与结果段证据]",
+      "anchor": "fig3",
+      "boundary": "[示例：在 X 数据集上成立，其他场景未验证]"
+    }
+  ],
+  "reference_coverage": [
+    {
+      "ref_id": "[示例 ref_id]",
+      "authors": "[示例作者]",
+      "year": "[示例年份]",
+      "venue": "[示例来源]",
+      "cited_in": "background",
+      "metadata_complete": true,
+      "verified": false
     }
   ],
   "verification": {
-    "fact_preservation": "示例：通过",
-    "anchor_validity": "示例：通过"
+    "background_specificity": { "result": "pass", "evidence": "示例：背景 3 个论断均有锚点" },
+    "grouping_consistency": { "result": "pass", "evidence": "示例：2 组均按方法路线分组" },
+    "claim_ref_match": { "result": "pass", "evidence": "示例：匹配 4/4 条" },
+    "gap_from_sources": { "result": "pass", "evidence": "示例：空白有 2 条前提文献" },
+    "contribution_evidence": { "result": "pass", "evidence": "示例：贡献 3/3 有正文证据" },
+    "coverage": { "result": "pass", "evidence": "示例：关键工作 7/8 已覆盖" },
+    "no_new_facts": { "result": "pass", "evidence": "示例：未新增材料外事实" }
   },
-  "uncertainties": [],
-  "change_log": []
+  "uncertainties": ["[示例：某文献缺年份，需人工确认]"],
+  "sources": ["[示例：论文材料路径与页码范围]"],
+  "change_log": ["[示例：删除无证据的贡献条目并写入 uncertainties]"]
 }

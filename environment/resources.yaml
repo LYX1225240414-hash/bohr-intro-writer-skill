@@ -1,0 +1,51 @@
+name: intro-writer
+version: 1.1.0
+entrypoint: ../SKILL.md
+bundle_root: ..
+description: >
+  引言与相关工作写作 Skill 的资源清单。执行内核为 resources/scripts/cite_lint.py，
+  负责把文献库与草稿引用逐条比对，机械检出幻觉引用、元数据不符与断言缺证据。
+
+resources:
+  - path: resources/scripts/cite_lint.py
+    kind: executable
+    runtime: python3
+    entry: "python3 resources/scripts/cite_lint.py"
+    subcommands: [scan, check, contrib]
+    requires: []          # 纯标准库
+    supports:
+      citation_styles: ["numbered [1]", "latex \\cite{key}", "author-year (Smith et al., 2023)"]
+      library_formats: [".bib", "numbered reference list (md/txt)", "references json"]
+    inputs: ["材料目录（含 bib / 参考文献表 / 论文材料）", "草稿 markdown"]
+    outputs: ["/app/work/refs.json", "/app/work/cite_report.json",
+              "/app/work/cite_report.md", "/app/work/contrib_report.json"]
+    outputs_note: >
+      cite_report.json 的 verification_hint 给出 citation_traceability /
+      citation_validity / reference_coverage / assertion_grounding 四项计数口径。
+
+  - path: resources/checklist.md
+    kind: doc
+    purpose: 自检与计数清单（四段齐全、引用覆盖、回查、一致性）
+
+  - path: resources/field_dict.md
+    kind: doc
+    purpose: 字段字典、锚点格式、分组维度与贡献边界示例
+
+  - path: resources/grouping_template.md
+    kind: template
+    purpose: 相关工作分组比较与空白推导模板
+
+  - path: resources/output_example.json
+    kind: sample
+    purpose: 输出结构示意（占位，非任何真实论文草稿）
+
+  - path: examples/README.md
+    kind: doc
+    purpose: 最小调用示例与完整步骤
+
+runtime:
+  python: ">=3.9"
+  network: not_required
+  notes: >
+    脚本只读材料与草稿，不改写正文。hallucinated 只做标记与建议，
+    最终由作者确认该文献是否真实存在（脚本无联网核验能力，不伪造 DOI 校验结果）。

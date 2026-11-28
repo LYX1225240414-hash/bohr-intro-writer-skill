@@ -84,6 +84,21 @@ python3 "$C" contrib --draft /app/output/intro_related_work.md --out /app/work
 
 `cite_report.md` 是人读版（按类别分组，带行号）；`cite_report.json.verification_hint` 给出四项计数口径。`contrib` 子命令检查贡献段里的"图 N / 表 N"是否在正文真实存在，防止贡献与图表对不上。
 
+**支持的引用写法**（`check` 会全部识别，漏一种就会把有引用的段落误判成"断言无引用"）：
+
+| 写法 | 例子 | 说明 |
+|---|---|---|
+| 编号式 | `[1]` `[1,3]` `[2-5]` | 与编号式文献表对齐 |
+| LaTeX 式 | `\cite{smith2020}` `\citep{a,b}` | 按 bibitem key 对齐 |
+| **键式** | `[smith2020]` `[@smith2020]` `[smith2020; lee2021]` | markdown 草稿最常见的写法 |
+| 作者-年份 | `(Smith et al., 2023)` `Smith et al. (2023)` | 走姓氏+年份匹配 |
+
+键式判定有条防误报规则：只有 pandoc 写法 `[@key]`，或键内带四位年份（`19xx`/`20xx`）才算引用，因此 `[GPU]`、`[LiFePO4]` 这类缩写与化学式不会被当成引用标记。
+
+**文献库解析**支持单行与多行 bib、嵌套花括号字段、编号式文献表与 JSON 导出；`scan` 会给出每个文件的 `count` 与 `skipped` 原因（未检出条目时会明说，不会静默返回空库）。
+
+`--out` 既可传目录也可传文件名（`scan --out refs.json` 与 `scan --out /app/work` 都可用）。
+
 脚本测不出的部分仍需人工判断：转述是否忠实于原文结论、分组维度是否统一、空白是否真由已引文献的缺口推出、贡献是否夸大了适用范围。
 
 逐项核对 `resources/checklist.md`，把结果写入 `verification`（**优先用脚本计数**，不要只写“通过”）：

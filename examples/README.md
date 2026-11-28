@@ -17,6 +17,18 @@ task: 依据论文材料撰写引言与相关工作，包含背景、相关工�
 3. 工作文件写在 `/app/work`；尽早把 `status: partial` 骨架写到 `/app/output/result.json`。
 4. 完成后写 `/app/output/result.json`、`/app/output/introduction_draft.md`、`/app/output/claim_citations.md`。
 
+## 第 5 步引用核验（脚本）
+
+```bash
+C=/skills/weekly-skill/resources/scripts/cite_lint.py
+python3 "$C" scan    --materials /app/work/materials --out /app/work/refs.json
+python3 "$C" check   --refs-json /app/work/refs.json --draft /app/output/introduction_draft.md --out /app/work
+python3 "$C" contrib --draft /app/output/introduction_draft.md --out /app/work
+cat /app/work/cite_report.md
+```
+
+处理原则：`hallucinated` 必须确认真实存在或删除；`metadata_mismatches` 按文献库改正；`uncited_assertions` 补引用或标为作者判断。
+
 ## 示意输出
 
 见 `../resources/output_example.json`。其中所有值均为占位示例，不代表任何真实论文的引言草稿。

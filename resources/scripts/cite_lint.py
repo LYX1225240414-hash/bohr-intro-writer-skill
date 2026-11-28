@@ -35,14 +35,72 @@ import re
 import sys
 from pathlib import Path
 
+
+def _as_outfile(p, default_name):
+    """--out 兼容层：传目录则写入目录下 default_name，传文件名则直接写该文件。"""
+    path = Path(p)
+    if path.is_dir() or not path.suffix:
+        path = path / default_name
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def _as_outdir(p):
+    """--out 兼容层：传的是文件名时取其父目录，避免把文件路径当目录用而崩溃。"""
+    path = Path(p)
+    if path.suffix.lower() in (".json", ".md", ".txt", ".yaml", ".yml", ".csv", ".tex", ".bib"):
+        path = path.parent if str(path.parent) not in ("", ".") else Path(".")
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
 TEXT_EXT = {".bib", ".md", ".txt", ".json", ".yaml", ".yml", ".csv"}
 BIB_ENTRY = re.compile(r"@(\w+)\s*\{\s*([^,\s]+)\s*,", re.I)
 BIB_FIELD = re.compile(r"(\w+)\s*=\s*[{\"](.+?)[}\"]\s*,?\s*$", re.S | re.M)
+BIB_KEYWORD = re.compile(r"([A-Za-z][\w\-]*)\s*=\s*")
+
+
+def bib_fields(body):
+    """按花括号配平解析 bib 字段，支持单行条目与嵌套花括号。
+
+    旧实现要求字段独占一行（正则带 $ 与 re.M），单行 bib 会把整段当成 title、
+    authors/year 全空，导致元数据核对形同虚设。
+    """
+    fields, i, n = {}, 0, len(body)
+    while i < n:
+        m = BIB_KEYWORD.match(body, i)
+        if not m:
+            i += 1
+            continue
+        name, j = m.group(1).lower(), m.end()
+        if j < n and body[j] == "{":
+            depth, k = 1, j + 1
+            while k < n and depth:
+                if body[k] == "{":
+                    depth += 1
+                elif body[k] == "}":
+                    depth -= 1
+                k += 1
+            val, i = body[j + 1:k - 1], k
+        elif j < n and body[j] == '"':
+            k = body.find('"', j + 1)
+            k = n if k < 0 else k
+            val, i = body[j + 1:k], k + 1
+        else:
+            k = j
+            while k < n and body[k] not in ",\n}":
+                k += 1
+            val, i = body[j:k], k
+        fields[name] = re.sub(r"\s+", " ", val).strip()
+    return fields
 
 # 编号式：[1] [1,2] [1-3] [1–3]
 CITE_NUM = re.compile(r"\[(\d{1,3}(?:\s*[,\-–—]\s*\d{1,3})*)\]")
 # LaTeX 式：\cite{a,b} \citep{a}
 CITE_TEX = re.compile(r"\\cite[a-z]*\{([^}]+)\}")
+# 键式：[smith2020] [@smith2020] [smith2020; lee2021]。markdown 草稿里极常见，
+# 旧实现只认 [1] 与 \cite，遇到键式会报「0 处引用」，整份核验结果失真。
+CITE_KEY = re.compile(r"\[(@?[A-Za-z][A-Za-z0-9_:.\-]{1,60}(?:\s*[;]\s*@?[A-Za-z][A-Za-z0-9_:.\-]{1,60})*)\]")
+YEAR_LIKE = re.compile(r"(?:19|20)\d{2}")
 # 作者-年份式：(Smith et al., 2023) / (Smith & Lee 2021) / Smith et al. (2023)
 CITE_AY = re.compile(
     r"\(([A-Z][A-Za-z\-']+)"
@@ -85,9 +143,7 @@ def parse_bib(text):
         # 找到配对的右括号（粗粒度：下一个 @ 之前）
         nxt = text.find("\n@", start)
         body = text[start: nxt if nxt > 0 else len(text)]
-        fields = {}
-        for fm in BIB_FIELD.finditer(body):
-            fields[fm.group(1).lower()] = re.sub(r"\s+", " ", fm.group(2)).strip()
+        fields = bib_fields(body)
         authors = fields.get("author", "")
         surnames = [a.strip().split(",")[0].strip() for a in authors.split(" and ") if a.strip()]
         out[key] = {
@@ -169,8 +225,8 @@ def cmd_scan(args):
             refs.setdefault(k, v)
     out = {"ok": bool(refs), "materials_root": str(root), "scanned": scanned,
            "skipped": skipped, "ref_count": len(refs), "refs": refs}
-    Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-    Path(args.out).write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
+    _p = _as_outfile(args.out, "refs.json")
+    _p.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps({"ok": out["ok"], "out": args.out, "ref_count": len(refs),
                       "scanned": len(scanned)}, ensure_ascii=False))
     return 0
@@ -207,6 +263,17 @@ def extract_citations(draft_text):
             for k in m.group(1).split(","):
                 k = k.strip()
                 if k:
+                    found.append({"kind": "key", "key": k, "line": i,
+                                  "snippet": line.strip()[:160]})
+        for m in CITE_KEY.finditer(line):
+            raw = m.group(1)
+            pandoc = raw.lstrip().startswith("@")
+            for k in [p.strip().lstrip("@") for p in raw.split(";")]:
+                if not k:
+                    continue
+                # 只有 pandoc 写法或键内带四位年份才当引用，避免把 [GPU]、
+                # [LiFePO4] 这类缩写/化学式误判成引用标记
+                if pandoc or YEAR_LIKE.search(k):
                     found.append({"kind": "key", "key": k, "line": i,
                                   "snippet": line.strip()[:160]})
         for m in CITE_AY.finditer(line):
@@ -320,7 +387,7 @@ def cmd_check(args):
             "assertion_grounding": f"无引用的强断言 {len(uncited)} 条",
         },
     }
-    outdir = Path(args.out)
+    outdir = _as_outdir(args.out)
     outdir.mkdir(parents=True, exist_ok=True)
     (outdir / "cite_report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     md = ["# 引用与论断核验报告", "",
@@ -400,7 +467,7 @@ def cmd_contrib(args):
               "verification_hint": {
                   "contribution_alignment": f"贡献条目 {len(items)} 条，图表引用可解析 {sum(1 for x in items if x['fig_refs_resolvable'])} 条",
               }}
-    outdir = Path(args.out)
+    outdir = _as_outdir(args.out)
     outdir.mkdir(parents=True, exist_ok=True)
     (outdir / "contrib_report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps({"contrib_mentions": len(items),

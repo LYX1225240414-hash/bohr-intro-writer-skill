@@ -1,6 +1,6 @@
 ---
 name: intro-writer
-description: 来源约束下的引言与相关工作写作工作流，从真实材料梳理研究背景、按问题或方法路线分组比较相关工作、从已引文献缺口推导研究空白，并让每条贡献与正文方法图表结果一一对应，输出带引用映射和证据的可编辑草稿。当用户要求写引言、整理相关工作、推导研究空白、核对贡献表述或补引用覆盖时使用。适用于期刊论文、学位论文、基金申请，支持中英文材料。
+description: 来源约束下的引言与相关工作写作工作流，从真实材料梳理研究背景、按问题或方法路线分组比较相关工作、从已引文献缺口推导研究空白，并让每条贡献与正文方法图表结果一一对应，输出带引用映射和证据的可编辑草稿；内置可离线运行的引用核验脚本（cite_lint.py），把草稿引用与文献库逐条比对，机械检出幻觉引用、元数据不符与无出处的强断言；当用户要求写引言、整理相关工作、推导研究空白、核对贡献表述或补引用覆盖时使用。适用于期刊论文、学位论文、基金申请，支持中英文材料。
 ---
 
 # 引言与相关工作：立得住、分得清、说得实、对得上
@@ -63,7 +63,30 @@ description: 来源约束下的引言与相关工作写作工作流，从真实�
 `gap_derivation` 每条必须列出 `premise_refs`（哪些已引工作的共同限制、未覆盖场景或相互冲突结论）与推理链，再说明本文工作如何填补。`contribution_map` 每条必须给出正文方法/图表/结果的 `evidence_in_paper`，并写明 `boundary`（不夸大适用范围）。无依据的空白或贡献不得写出，写入 `uncertainties`。
 
 ### 第 5 步：引用覆盖与三重自检（关键）
-逐项核对 `resources/checklist.md`，把结果写入 `verification`（必须带计数，不要只写“通过”）：
+
+**先跑机械核验，再做人工判断**——引用是否真实存在、元数据是否对得上、断言是否有出处，这三项可以完全机械化：
+
+```bash
+C=/skills/weekly-skill/resources/scripts/cite_lint.py
+python3 "$C" scan    --materials /app/work/materials --out /app/work/refs.json
+python3 "$C" check   --refs-json /app/work/refs.json \
+                     --draft /app/output/intro_related_work.md --out /app/work
+python3 "$C" contrib --draft /app/output/intro_related_work.md --out /app/work
+```
+
+| 输出类别 | 含义 | 必须动作 |
+|---|---|---|
+| `hallucinated` | 草稿引用了文献库里查不到的条目 | **必须处理**：确认文献真实存在并入库，否则删除该引用（这是最严重的错误） |
+| `metadata_mismatches` | 编号/年份/作者与文献库不一致 | 按文献库原值改正 |
+| `uncited_assertions` | 含"表明/证明/优于/显著"等强断言但无引用 | 补引用，或改写为作者判断并显式标注 |
+| `unused` | 文献库有、草稿未引 | 评估是否属于必须覆盖的关键工作，补进相关工作 |
+| `matched` | 可回查且元数据一致 | 直接作为 `claim_citations` 的条目 |
+
+`cite_report.md` 是人读版（按类别分组，带行号）；`cite_report.json.verification_hint` 给出四项计数口径。`contrib` 子命令检查贡献段里的"图 N / 表 N"是否在正文真实存在，防止贡献与图表对不上。
+
+脚本测不出的部分仍需人工判断：转述是否忠实于原文结论、分组维度是否统一、空白是否真由已引文献的缺口推出、贡献是否夸大了适用范围。
+
+逐项核对 `resources/checklist.md`，把结果写入 `verification`（**优先用脚本计数**，不要只写“通过”）：
 1. **覆盖计数**：关键工作数 / 已引用数、近五年进展是否覆盖、四段草稿是否齐全、引用元数据字段完整数 / 总数。
 2. **回查**：抽查每条 `claim_citations`，按 `anchor` 找到 `evidence` 且文献结论确实支撑论断；统计成功数 / 总数，失败即修正或降 confidence 并写入 `uncertainties`。
 3. **一致性**：分组维度是否统一、空白是否由已引文献推出、贡献是否与正文证据一一对应、是否新增材料外事实。发现问题回到第 2–4 步修正并记入 `change_log`。
@@ -85,12 +108,29 @@ description: 来源约束下的引言与相关工作写作工作流，从真实�
 
 ## 资源
 
+- `resources/scripts/cite_lint.py`：**执行内核**。`scan` 解析 bib/编号式/JSON 文献库 → `refs.json`；`check` 比对草稿引用，分出幻觉引用/元数据不符/断言无引用/未引用；`contrib` 检查贡献段的图表引用是否可解析。纯标准库，无第三方依赖。
+- `environment/resources.yaml`：资源清单、依赖、运行时与产物说明。
 - `resources/checklist.md`：自检与计数清单。
 - `resources/field_dict.md`：字段字典、锚点格式、分组维度与贡献边界示例。
 - `resources/grouping_template.md`：相关工作分组比较与空白推导模板。
 - `resources/output_example.json`：输出结构示意（非答案）。
 - `examples/README.md`：最小调用示例。
 
-## 最小示例
+## 最小示例（示意，非真实论文草稿）
 
-见 `examples/README.md`。示意输出仅展示字段结构，不代表任何真实论文的引言草稿。
+```bash
+C=/skills/weekly-skill/resources/scripts/cite_lint.py
+python3 "$C" scan  --materials /app/work/materials --out /app/work/refs.json
+python3 "$C" check --refs-json /app/work/refs.json --draft /app/output/intro_related_work.md --out /app/work
+cat /app/work/cite_report.md
+```
+
+示意输出（仅结构）：
+
+```json
+{"library_size": 18, "citation_marks": 14, "matched_count": 14,
+ "hallucinated_count": 0, "metadata_count": 0, "unused_count": 4,
+ "uncited_assertion_count": 1, "citation_precision": 1.0, "coverage": 0.778}
+```
+
+真正的结果必须来自本次实际运行，示意输出不得冒充正式案例答案。
